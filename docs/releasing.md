@@ -14,7 +14,7 @@ npm can't use trusted publishing for a package's first version, because the trus
 	```
 
 3. Publish the first version with the steps in [Publish a version](#publish-a-version).
-4. On npmjs.com, open the package's **Settings**, and add a trusted publisher. Select **GitHub Actions**, then enter `TechyAditya` as the owner, `waydroid-mcp` as the repository and `publish.yml` as the workflow file.
+4. On npmjs.com, open the package's **Settings**, and add a trusted publisher. Select **GitHub Actions**, then enter `TechyAditya` as the owner, `waydroid-mcp` as the repository and `publish.yml` as the workflow file. Under **Allowed actions**, allow `npm publish`, because the workflow publishes directly. Publish the next version within 2 days, or npm expires the new trusted publisher.
 5. Delete the secret, and then delete the token on npmjs.com:
 
 	```sh
