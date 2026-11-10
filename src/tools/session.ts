@@ -5,12 +5,14 @@ import { z } from "zod";
 import { appDisplays, androidDisplays, hasAppDisplays, json, sleep, tool } from "../common.js";
 import {
   AdbUnauthorized,
+  SESSION_VARS,
   ToolError,
   WAYDROID,
   adb,
   adbSerial,
   adbShell,
   controlRequest,
+  fillDesktopEnv,
   rootShell,
   rootState,
   run,
@@ -19,15 +21,6 @@ import {
 } from "../exec.js";
 
 const UNIT = "waydroid-mcp-session";
-// The session needs the desktop's Wayland and D-Bus to open windows.
-const SESSION_ENV = [
-  "WAYLAND_DISPLAY",
-  "XDG_RUNTIME_DIR",
-  "DBUS_SESSION_BUS_ADDRESS",
-  "XDG_SESSION_TYPE",
-  "XDG_CURRENT_DESKTOP",
-  "HYPRLAND_INSTANCE_SIGNATURE",
-];
 const PROPS = [
   "ro.build.version.release",
   "ro.lineage.version",
@@ -64,10 +57,15 @@ async function start(timeoutS: number): Promise<string> {
     if (await waitForBoot(began + timeoutS * 1000)) return "The session was already running, and Android has booted.";
     return `The session is running but Android hasn't finished booting after ${timeoutS} s. Call \`status\` again.`;
   }
+  if (!process.env.WAYLAND_DISPLAY) await fillDesktopEnv();
   if (!process.env.WAYLAND_DISPLAY) {
-    throw new ToolError("WAYLAND_DISPLAY isn't set in this server's environment, so Waydroid can't open its window. Start the MCP client from the desktop session.");
+    throw new ToolError(
+      "No Wayland session found: WAYLAND_DISPLAY isn't set, the user systemd manager doesn't have it, and the runtime " +
+        "directory doesn't hold exactly one wayland-N socket. Set WAYLAND_DISPLAY in the MCP server's environment.",
+    );
   }
-  const env = SESSION_ENV.filter((k) => process.env[k]).flatMap((k) => ["-E", `${k}=${process.env[k]}`]);
+  // The session needs the desktop's Wayland and D-Bus to open windows.
+  const env = SESSION_VARS.filter((k) => process.env[k]).flatMap((k) => ["-E", `${k}=${process.env[k]}`]);
   if ((await run("sh", ["-c", "command -v systemd-run"])).code === 0) {
     // A session started from a short-lived process dies with it, so it runs as a user unit.
     await run("systemctl", ["--user", "reset-failed", UNIT]);

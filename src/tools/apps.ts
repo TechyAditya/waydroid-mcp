@@ -6,8 +6,10 @@ import { z } from "zod";
 import {
   APP_DISPLAYS_HELP,
   APP_DISPLAY_SERVICE_HELP,
+  androidDisplays,
   appDisplayService,
   appDisplays,
+  sleep,
   hasAppDisplays,
   json,
   packageUid,
@@ -85,6 +87,39 @@ async function appInfo(pkg: string) {
     granted_permissions: granted,
     denied_permissions: denied,
   };
+}
+
+/** Whether one of the app's activity windows has drawn and no splash screen of it is on screen. */
+async function appDrawn(pkg: string): Promise<boolean> {
+  const dump = await adbShell("dumpsys window windows");
+  const p = pkg.replace(/\./g, "\\.");
+  if (new RegExp(`Window\\{\\w+ u0 Splash Screen ${p}\\}:[^\\n]*\\n(?:(?! {2}Window #)[^\\n]*\\n)*?[^\\n]*isOnScreen=true`).test(dump)) {
+    return false;
+  }
+  const re = new RegExp(`Window\\{\\w+ u0 ${p}/[^}]*\\}:\\n((?:(?! {2}Window #)[^\\n]*\\n)*)`, "g");
+  for (const m of dump.matchAll(re)) {
+    if (/mDrawState=HAS_DRAWN/.test(m[1]) && /isOnScreen=true/.test(m[1])) return true;
+  }
+  return false;
+}
+
+/**
+ * Waits until the app has drawn its first frame and, on display 0, until Waydroid's window has stopped
+ * resizing: a new window is resized by the compositor, and the app lays out again for each size.
+ */
+async function waitForApp(pkg: string, display: number, timeoutMs = 15_000): Promise<string | null> {
+  const deadline = Date.now() + timeoutMs;
+  let lastSize = "";
+  let stable = 0;
+  while (Date.now() < deadline) {
+    const d = (await androidDisplays()).find((x) => x.id === display);
+    const size = d ? `${d.width}x${d.height}` : "";
+    stable = size === lastSize ? stable + 1 : 0;
+    lastSize = size;
+    if (stable >= 2 && (await appDrawn(pkg))) return null;
+    await sleep(300);
+  }
+  return `${pkg} hadn't finished drawing after ${timeoutMs / 1000} s; take a screenshot to see its state.`;
 }
 
 /** The newest app directory under Android's /data/app, which names the package just installed. */
@@ -196,8 +231,9 @@ export function register(server: McpServer) {
       if (m === "waydroid") {
         if (size || dpi) throw new ToolError("size and dpi apply to per-app windows and hidden displays, not Waydroid's own window.");
         await runText(WAYDROID, ["app", "launch", pkg], { timeoutMs: 30_000 });
+        const warning = await waitForApp(pkg, 0);
         const t = await resolveTarget(undefined, 0);
-        return json({ package: pkg, mode: m, display_id: 0, width: t.width, height: t.height });
+        return json({ package: pkg, mode: m, display_id: 0, width: t.width, height: t.height, warning: warning ?? undefined });
       }
       if (!perApp) throw new ToolError((await hasAppDisplays()) ? APP_DISPLAY_SERVICE_HELP : APP_DISPLAYS_HELP);
       const args = ["launch", pkg, "--json"];
@@ -205,8 +241,9 @@ export function register(server: McpServer) {
       if (dpi) args.push("--dpi", String(dpi));
       if (m === "hidden") args.push("--hidden");
       const info = JSON.parse(await runText(APP_DISPLAYS, args, { timeoutMs: 120_000 }));
+      const warning = await waitForApp(pkg, info.display_id);
       const { commands, serial: _serial, ...rest } = info;
-      return json({ ...rest, mode: m, live_view: m === "hidden" ? commands?.["live view"] : undefined });
+      return json({ ...rest, mode: m, live_view: m === "hidden" ? commands?.["live view"] : undefined, warning: warning ?? undefined });
     },
   );
 

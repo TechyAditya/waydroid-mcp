@@ -27,7 +27,7 @@ A tool that acts on an app takes `package`, or `display_id` for a display.
 |---|---|
 | `list_apps` | Launchable, third-party or all packages, with app names. |
 | `app_info` | Version, SDK levels, debuggable flag, paths, launcher activity, running processes, open display and permissions of one package. |
-| `launch_app` | Opens an app in its own window (`window`), on a hidden display (`hidden`), or in Waydroid's window (`waydroid`). `size` and `dpi` fix the display, and `restart` force-stops the app first for a cold start. Launching an open app again applies the new options. |
+| `launch_app` | Opens an app in its own window (`window`), on a hidden display (`hidden`), or in Waydroid's window (`waydroid`). `size` and `dpi` fix the display, and `restart` force-stops the app first for a cold start. Launching an open app again applies the new options. Returns after the app has drawn its first frame, and in Waydroid's window after the window has stopped resizing. |
 | `start_activity` | Starts an intent on a display: a URL, a deep link or a component. Returns the launch time from `am start -W`. |
 | `install_apk` | Installs an APK, or an `.apks`, `.xapk` or `.apkm` bundle, from a host path or a URL. Returns the package name and version. |
 | `app_action` | Force-stops an app, clears its data, uninstalls it, grants or revokes a permission, or closes its own window. |
@@ -36,7 +36,7 @@ A tool that acts on an app takes `package`, or `display_id` for a display.
 
 | Tool | Description |
 |---|---|
-| `screenshot` | Returns a screenshot as an image, and saves the full-size PNG. |
+| `screenshot` | Returns a screenshot as an image, and saves the full-size PNG. An app's own display is captured by waydroid-app-displays, and display 0 by `screencap`. `wait_ms` waits first, for a page change after input. |
 | `record_screen` | Records a display to MP4 for up to 50 seconds. |
 | `ui_tree` | The accessibility tree of the windows on a display, one line per element: class, text, hint, description, resource id, state flags, center coordinates and bounds. |
 | `input` | Tap, long press, swipe, text and key events. `tap` and `long_press` take coordinates, or an element's text, description or resource id. |
@@ -47,7 +47,7 @@ A tool that acts on an app takes `package`, or `display_id` for a display.
 |---|---|
 | `logcat` | Recent log lines, filtered by app, tag, priority, time and regular expression. |
 | `logcat_follow` | Collects new log lines in the background. `read` returns the lines since the last read, and can wait for a line that matches a regular expression. |
-| `crashes` | Java crashes, native crashes and ANRs from Android's dropbox, tombstones and ANR traces, newest first. With `read`, returns one full report. |
+| `crashes` | Java crashes, native crashes and ANRs from Android's dropbox, tombstones and ANR traces, newest first. With `read`, returns one full report. Tombstones and ANR traces are host files, so they are listed even when adb can't reach Android. |
 | `stack_dump` | Java or native thread stacks of a running app, from `debuggerd`. Needs root. |
 | `trace` | Records a Perfetto trace for up to 50 seconds, optionally of an app's cold start. Open the file at [ui.perfetto.dev](https://ui.perfetto.dev). |
 | `app_perf` | Memory summary from `meminfo`, frame stats and jank percentages from `gfxinfo`, and CPU use of an app. |

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createConnection } from "node:net";
 import { homedir, userInfo } from "node:os";
 import { join } from "node:path";
@@ -92,6 +92,44 @@ export function clip(text: string, kind = "output", name = "output", keep: "star
   return keep === "end" ? `${note}\n${text.slice(-MAX_TEXT)}` : `${text.slice(0, MAX_TEXT)}\n${note}`;
 }
 
+// ---- desktop session ----
+
+export const SESSION_VARS = [
+  "WAYLAND_DISPLAY",
+  "XDG_RUNTIME_DIR",
+  "DBUS_SESSION_BUS_ADDRESS",
+  "XDG_SESSION_TYPE",
+  "XDG_CURRENT_DESKTOP",
+  "HYPRLAND_INSTANCE_SIGNATURE",
+  "DISPLAY",
+];
+
+/**
+ * Fills in the desktop session's variables that the MCP client didn't pass. Some clients start servers
+ * with only HOME and PATH, and Waydroid needs the Wayland socket and the session bus to open windows.
+ */
+export async function fillDesktopEnv(): Promise<void> {
+  const env = process.env;
+  const uid = process.getuid?.();
+  if (!env.XDG_RUNTIME_DIR && uid !== undefined && existsSync(`/run/user/${uid}`)) env.XDG_RUNTIME_DIR = `/run/user/${uid}`;
+  const runtime = env.XDG_RUNTIME_DIR;
+  if (!runtime) return;
+  if (!env.DBUS_SESSION_BUS_ADDRESS && existsSync(join(runtime, "bus"))) env.DBUS_SESSION_BUS_ADDRESS = `unix:path=${join(runtime, "bus")}`;
+  // Desktops import their variables into the user's systemd manager.
+  const r = await run("systemctl", ["--user", "show-environment"], { timeoutMs: 5000 });
+  if (r.code === 0) {
+    for (const line of r.stdout.toString().split("\n")) {
+      const m = line.match(/^([A-Z_]+)=([^$'"].*)$/);
+      if (m && SESSION_VARS.includes(m[1]) && !env[m[1]]) env[m[1]] = m[2];
+    }
+  }
+  if (!env.WAYLAND_DISPLAY) {
+    const sockets = readdirSync(runtime).filter((f) => /^wayland-\d+$/.test(f));
+    if (sockets.length === 1) env.WAYLAND_DISPLAY = sockets[0];
+  }
+  if (env.WAYLAND_DISPLAY && !env.XDG_SESSION_TYPE) env.XDG_SESSION_TYPE = "wayland";
+}
+
 // ---- Waydroid ----
 
 export interface WaydroidStatus {
@@ -156,6 +194,8 @@ export async function adbSerial(): Promise<string> {
           "tick \"Always allow from this computer\" in the \"Allow USB debugging?\" prompt, and tap Allow.",
       );
     }
+    // An offline device stays offline until adb drops it, for example after Android restarts.
+    if (state === "offline") await run("adb", ["disconnect", serial], { timeoutMs: 10_000 });
     await run("adb", ["connect", serial], { timeoutMs: 10_000 });
     await new Promise((r) => setTimeout(r, 500));
   }

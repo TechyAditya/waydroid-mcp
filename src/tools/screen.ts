@@ -213,8 +213,10 @@ export function register(server: McpServer) {
     {
       ...targetShape,
       max_size: z.number().int().min(0).default(1280).describe("Longest side of the returned image in pixels; 0 returns full size."),
+      wait_ms: z.number().int().min(0).max(10_000).default(0).describe("Wait this long first, for a page change or animation after input."),
     },
-    async ({ package: pkg, display_id, max_size }): Promise<CallToolResult> => {
+    async ({ package: pkg, display_id, max_size, wait_ms }): Promise<CallToolResult> => {
+      if (wait_ms) await sleep(wait_ms);
       const t = await resolveTarget(pkg, display_id);
       const file = await capture(t);
       let img = readFileSync(file);

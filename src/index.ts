@@ -3,6 +3,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { readFileSync } from "node:fs";
+import { fillDesktopEnv } from "./exec.js";
 import { register as apps } from "./tools/apps.js";
 import { register as debug } from "./tools/debug.js";
 import { register as screen } from "./tools/screen.js";
@@ -22,6 +23,8 @@ const server = new McpServer(
       "(screenshots, recordings, traces) go to /tmp/waydroid-mcp.",
   },
 );
+
+await fillDesktopEnv();
 
 session(server);
 apps(server);

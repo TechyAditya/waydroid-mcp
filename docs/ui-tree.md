@@ -22,4 +22,4 @@ The dumper connects with `FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES`. A plain `u
 
 The npm package ships the dumper prebuilt as `assets/uidump.jar`, about 4 kB, so users don't need Java. On the first `ui_tree` call, the server pushes the jar to `/data/local/tmp` under a name that includes the jar's hash. A new version of the jar replaces the old one.
 
-If the dumper fails, `ui_tree` falls back to `uiautomator dump` and says so in its reply. The dumper needs a hidden `UiAutomation(Looper, IUiAutomationConnection)` constructor, and it has been tested on Android 13 only. On an Android version without that constructor, `ui_tree` uses the fallback.
+If the dumper fails, `ui_tree` falls back to `uiautomator dump` and says so in its reply. The dumper uses the hidden constructor `UiAutomation(Looper, IUiAutomationConnection)` and the hidden method `connect(int)`. Both are in the Android 11, 13 and 14 sources. The dumper has run on Android 13, on a stock Waydroid image and on a modified one.

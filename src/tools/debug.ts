@@ -293,19 +293,26 @@ export function register(server: McpServer) {
         return clip(c.text ?? readFileSync(c.file!, "utf8"), "crashes", read.replace(/:/g, "-"), "start");
       }
       const since = Date.now() - since_h * 3_600_000;
-      const all = [
-        ...(await dropboxCrashes(since)),
-        ...fileCrashes("tombstones", "tombstone", since),
-        ...fileCrashes("anr", "anr", since),
-      ]
+      // Tombstones and ANR traces are host files, so they list even when Android is too broken for adb.
+      let dropbox: Crash[] = [];
+      let note = "";
+      try {
+        dropbox = await dropboxCrashes(since);
+      } catch (e) {
+        note = `Android's dropbox isn't readable (${(e as Error).message}), so Java crashes are missing; tombstones and ANR traces are listed.\n`;
+      }
+      const all = [...dropbox, ...fileCrashes("tombstones", "tombstone", since), ...fileCrashes("anr", "anr", since)]
         .filter((c) => !pkg || c.process === pkg || c.process.startsWith(`${pkg}:`))
         .sort((a, b) => b.time.localeCompare(a.time));
       for (const c of all) crashCache.set(c.id, c);
-      if (!all.length) return `No crashes${pkg ? ` of ${pkg}` : ""} in the last ${since_h} h.`;
-      return all
-        .slice(0, limit)
-        .map((c) => `${c.time}  ${c.kind}  ${c.process}  ${c.summary}\n  read: ${c.id}`)
-        .join("\n");
+      if (!all.length) return `${note}No crashes${pkg ? ` of ${pkg}` : ""} in the last ${since_h} h.`;
+      return (
+        note +
+        all
+          .slice(0, limit)
+          .map((c) => `${c.time}  ${c.kind}  ${c.process}  ${c.summary}\n  read: ${c.id}`)
+          .join("\n")
+      );
     },
     { readOnlyHint: true },
   );
