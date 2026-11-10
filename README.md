@@ -31,14 +31,20 @@ Waydroid sets `ro.adb.secure=1`, so Android asks before it accepts a new compute
 
 The server talks MCP over stdio. To start Waydroid, it needs your desktop session's `WAYLAND_DISPLAY` and session bus. If the MCP client doesn't pass them, the server reads them from `systemctl --user show-environment`, and falls back to the only `wayland-N` socket in `/run/user/<uid>`.
 
-To add it to Cursor, put this in `~/.cursor/mcp.json`:
+`npx` installs the server from the prebuilt package of the [v0.1.0 release](https://github.com/TechyAditya/waydroid-mcp/releases/tag/v0.1.0). npm 12 and later install a package from a URL only with `--allow-remote`. The value `root` allows it for this package and not for its dependencies, and older npm versions ignore the flag.
+
+To add the server to Cursor, put this in `~/.cursor/mcp.json`:
 
 ```json
 {
 	"mcpServers": {
 		"waydroid": {
 			"command": "npx",
-			"args": ["-y", "github:TechyAditya/waydroid-mcp#v0.1.0"]
+			"args": [
+				"-y",
+				"--allow-remote=root",
+				"https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz"
+			]
 		}
 	}
 }
@@ -47,10 +53,10 @@ To add it to Cursor, put this in `~/.cursor/mcp.json`:
 To add it to Claude Code, run:
 
 ```sh
-claude mcp add waydroid -- npx -y github:TechyAditya/waydroid-mcp#v0.1.0
+claude mcp add waydroid -- npx -y --allow-remote=root https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz
 ```
 
-On the first run, npm clones the repository and builds the server. To skip the build, give npm the prebuilt package from the [v0.1.0 release](https://github.com/TechyAditya/waydroid-mcp/releases/tag/v0.1.0) instead. Replace `github:TechyAditya/waydroid-mcp#v0.1.0` with `https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz`.
+To build from the repository's source instead, replace the two arguments after `-y` with `--allow-git=root` and `github:TechyAditya/waydroid-mcp#v0.1.0`. npm then clones the repository and builds the server on the first run.
 
 ## Set up root access
 
