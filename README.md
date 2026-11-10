@@ -96,4 +96,4 @@ The dumper's source is `android/src/waydroidmcp/UiDump.java`, and the package sh
 
 ## License
 
-MIT
+[GNU Affero General Public License v3.0 or later](LICENSE). If you distribute a modified version, or let people use one over a network, you must offer them its source code under the same license.

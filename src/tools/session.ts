@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { spawn } from "node:child_process";
 import { z } from "zod";

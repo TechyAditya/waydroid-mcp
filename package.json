@@ -11,7 +11,7 @@
     "logcat",
     "perfetto"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "author": "Aditya Sethi",
   "repository": {
     "type": "git",

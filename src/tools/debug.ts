@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync, openSync, readSync, closeSync } from "node:fs";

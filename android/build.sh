@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Builds assets/uidump.jar, the UI dumper ui_tree runs inside Android, for Android 11 and later.
 # Downloads its toolchain into android/build/tools on first use; set TOOLS to reuse another copy,
 # such as waydroid-app-displays' build/tools. Needs java.
