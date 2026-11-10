@@ -17,6 +17,10 @@
     "type": "git",
     "url": "git+https://github.com/TechyAditya/waydroid-mcp.git"
   },
+  "homepage": "https://github.com/TechyAditya/waydroid-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/TechyAditya/waydroid-mcp/issues"
+  },
   "type": "module",
   "bin": {
     "waydroid-mcp": "dist/index.js"
