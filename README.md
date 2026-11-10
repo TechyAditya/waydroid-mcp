@@ -17,14 +17,14 @@ The server finds Waydroid's adb address from `waydroid status` and connects to i
 
 The server talks MCP over stdio. Start your MCP client from your desktop session, so the server inherits `WAYLAND_DISPLAY` and can start Waydroid.
 
-For Cursor, add this to `~/.cursor/mcp.json`:
+`npx` installs the server from this GitHub repository. For Cursor, add this to `~/.cursor/mcp.json`:
 
 ```json
 {
 	"mcpServers": {
 		"waydroid": {
 			"command": "npx",
-			"args": ["-y", "waydroid-mcp"]
+			"args": ["-y", "github:TechyAditya/waydroid-mcp#v0.1.0"]
 		}
 	}
 }
@@ -33,10 +33,12 @@ For Cursor, add this to `~/.cursor/mcp.json`:
 For Claude Code:
 
 ```sh
-claude mcp add waydroid -- npx -y waydroid-mcp
+claude mcp add waydroid -- npx -y github:TechyAditya/waydroid-mcp#v0.1.0
 ```
 
-To run a local checkout instead, build it with `npm install && npm run build` and use `node /path/to/waydroid-mcp/dist/index.js` as the command.
+npm builds the server from source on the first run, which takes about half a minute. To skip the build, use the prebuilt package from the [v0.1.0 release](https://github.com/TechyAditya/waydroid-mcp/releases/tag/v0.1.0) instead: `https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz` in place of `github:TechyAditya/waydroid-mcp#v0.1.0`.
+
+To run a local checkout, run `npm install` in it, which also builds it, and use `node /path/to/waydroid-mcp/dist/index.js` as the command.
 
 ## Set up root access
 
