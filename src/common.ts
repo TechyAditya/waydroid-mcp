@@ -2,7 +2,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult, ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { APP_DISPLAYS, ToolError, adbShell, run, sh } from "./exec.js";
+import { APP_DISPLAYS, ToolError, adbShell, controlRequest, run, sh } from "./exec.js";
 
 type Shape = Record<string, z.ZodType>;
 type Reply = CallToolResult | string;
@@ -64,6 +64,21 @@ export async function hasAppDisplays(): Promise<boolean> {
   }
   return appDisplaysInstalled;
 }
+
+/** Whether the per-app window service answers. It exits at start when Android's gralloc isn't gralloc.default. */
+export async function appDisplayService(): Promise<boolean> {
+  if (!(await hasAppDisplays())) return false;
+  try {
+    return (await controlRequest("version", 3000)).startsWith("ok");
+  } catch {
+    return false;
+  }
+}
+
+export const APP_DISPLAY_SERVICE_HELP =
+  "waydroid-app-displays is installed but its service isn't answering. It runs only when Android uses gralloc.default " +
+  "(Waydroid uses a GBM gralloc on Intel and AMD GPUs); check `logcat` with tags [\"waydroid-app-displays:V\"]. " +
+  "`mode: \"waydroid\"` uses Waydroid's own window instead.";
 
 export const APP_DISPLAYS_HELP =
   "Per-app windows and hidden displays need waydroid-app-displays (https://github.com/TechyAditya/waydroid-app-displays), " +

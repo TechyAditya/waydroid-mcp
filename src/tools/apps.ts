@@ -5,6 +5,8 @@ import { basename, join } from "node:path";
 import { z } from "zod";
 import {
   APP_DISPLAYS_HELP,
+  APP_DISPLAY_SERVICE_HELP,
+  appDisplayService,
   appDisplays,
   hasAppDisplays,
   json,
@@ -180,7 +182,7 @@ export function register(server: McpServer) {
       "Returns the display id that input, screenshot and ui_tree act on; it changes each time the app is closed and opened.",
     {
       package: pkgSchema,
-      mode: z.enum(["window", "hidden", "waydroid"]).optional().describe("Default: window when waydroid-app-displays is installed, otherwise waydroid."),
+      mode: z.enum(["window", "hidden", "waydroid"]).optional().describe("Default: window when the waydroid-app-displays service is running, otherwise waydroid."),
       size: z.string().regex(/^\d+x\d+$/).optional().describe("Android display size WIDTHxHEIGHT in pixels, such as 1080x2340."),
       dpi: z.number().int().min(80).max(800).optional(),
       restart: z.boolean().default(false).describe("Force-stop the app first, for a cold start."),
@@ -188,7 +190,7 @@ export function register(server: McpServer) {
     async ({ package: pkg, mode, size, dpi, restart }) => {
       await adbSerial();
       await packageUid(pkg);
-      const perApp = await hasAppDisplays();
+      const perApp = await appDisplayService();
       const m = mode ?? (perApp ? "window" : "waydroid");
       if (restart) await adbShell(`am force-stop ${sh(pkg)}`);
       if (m === "waydroid") {
@@ -197,7 +199,7 @@ export function register(server: McpServer) {
         const t = await resolveTarget(undefined, 0);
         return json({ package: pkg, mode: m, display_id: 0, width: t.width, height: t.height });
       }
-      if (!perApp) throw new ToolError(APP_DISPLAYS_HELP);
+      if (!perApp) throw new ToolError((await hasAppDisplays()) ? APP_DISPLAY_SERVICE_HELP : APP_DISPLAYS_HELP);
       const args = ["launch", pkg, "--json"];
       if (size) args.push("--size", size);
       if (dpi) args.push("--dpi", String(dpi));

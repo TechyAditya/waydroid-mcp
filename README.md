@@ -2,7 +2,7 @@
 
 An MCP server for developing and debugging Android apps in [Waydroid](https://waydro.id). An agent can start Waydroid, install and launch apps, see and drive them, read their UI tree, follow their logs, collect crashes and stack dumps, and record Perfetto traces.
 
-Apps can run on hidden displays of a fixed size and density, so an agent can test a 360 dp phone layout without a window on your desktop. This needs [waydroid-app-displays](https://github.com/TechyAditya/waydroid-app-displays). Without it, every tool works on Waydroid's own window.
+Apps can run on hidden displays of a fixed size and density, so an agent can test a 360 dp phone layout without a window on your desktop. This needs [waydroid-app-displays](https://github.com/TechyAditya/waydroid-app-displays), whose service runs only when Android uses `gralloc.default`. Waydroid uses that gralloc on NVIDIA GPUs and with software rendering, and a GBM gralloc on Intel and AMD GPUs. Without the service, every tool works on Waydroid's own window.
 
 ## Requirements
 
