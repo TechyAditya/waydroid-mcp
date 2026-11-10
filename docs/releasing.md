@@ -4,9 +4,9 @@ The workflow `.github/workflows/publish.yml` publishes the package to npm when y
 
 ## Set up publishing once
 
-npm can't use trusted publishing for a package's first version, because the trusted publisher is a setting of a package that already exists. The first version needs an npm token.
+npm can't use trusted publishing for a package's first version, because the trusted publisher is a setting of a package that already exists. The first version needs an npm token. npm plans to stop tokens that bypass two-factor authentication from publishing directly in January 2027, as its [changelog](https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/) says, so use the token only for this first version.
 
-1. On npmjs.com, create a granular access token with read and write access to all packages, and a short expiry.
+1. On npmjs.com, create a granular access token with read and write access to all packages, **Bypass two-factor authentication** selected, and a short expiry.
 2. Add the token to the repository as the Actions secret `NPM_TOKEN`:
 
 	```sh
