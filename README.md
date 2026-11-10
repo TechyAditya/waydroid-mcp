@@ -31,8 +31,6 @@ Waydroid sets `ro.adb.secure=1`, so Android asks before it accepts a new compute
 
 The server talks MCP over stdio. To start Waydroid, it needs your desktop session's `WAYLAND_DISPLAY` and session bus. If the MCP client doesn't pass them, the server reads them from `systemctl --user show-environment`, and falls back to the only `wayland-N` socket in `/run/user/<uid>`.
 
-`npx` installs the server from the prebuilt package of the [v0.1.0 release](https://github.com/TechyAditya/waydroid-mcp/releases/tag/v0.1.0). npm 12 and later install a package from a URL only with `--allow-remote`. The value `root` allows it for this package and not for its dependencies, and older npm versions ignore the flag.
-
 To add the server to Cursor, put this in `~/.cursor/mcp.json`:
 
 ```json
@@ -40,11 +38,7 @@ To add the server to Cursor, put this in `~/.cursor/mcp.json`:
 	"mcpServers": {
 		"waydroid": {
 			"command": "npx",
-			"args": [
-				"-y",
-				"--allow-remote=root",
-				"https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz"
-			]
+			"args": ["-y", "waydroid-mcp"]
 		}
 	}
 }
@@ -53,10 +47,10 @@ To add the server to Cursor, put this in `~/.cursor/mcp.json`:
 To add it to Claude Code, run:
 
 ```sh
-claude mcp add waydroid -- npx -y --allow-remote=root https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz
+claude mcp add waydroid -- npx -y waydroid-mcp
 ```
 
-To build from the repository's source instead, replace the two arguments after `-y` with `--allow-git=root` and `github:TechyAditya/waydroid-mcp#v0.1.0`. npm then clones the repository and builds the server on the first run.
+To install from GitHub instead of npm, replace `waydroid-mcp` with two arguments: `--allow-remote=root` and the package URL from the [GitHub release](https://github.com/TechyAditya/waydroid-mcp/releases), such as `https://github.com/TechyAditya/waydroid-mcp/releases/download/v0.1.0/waydroid-mcp-0.1.0.tgz`. npm 12 and later install a package from a URL only with `--allow-remote`. The value `root` allows it for this package and not for its dependencies, and older npm versions ignore the flag.
 
 ## Set up root access
 
@@ -81,6 +75,8 @@ If sudo rejects the password once, the server turns root off until `root_access`
 3. Use `node /path/to/waydroid-mcp/dist/index.js` as the command in your MCP client.
 
 `ui_tree` runs a small UI dumper inside Android, and `assets/uidump.jar` has it prebuilt. [How ui_tree reads every display](docs/ui-tree.md) explains why. To rebuild the dumper after you change `android/src`, run `android/build.sh`. The script needs `java`. It downloads the Java compiler, `d8` and the Android 13 `android.jar` into `android/build/tools`, and checks the SHA-256 of each file.
+
+[Release a new version](docs/releasing.md) describes how a tag publishes the package to npm.
 
 ## Tested setups
 
