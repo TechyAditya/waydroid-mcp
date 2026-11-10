@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { z } from "zod";
 import { appDisplays, androidDisplays, hasAppDisplays, json, sleep, tool } from "../common.js";
 import {
+  AdbUnauthorized,
   ToolError,
   WAYDROID,
   adb,
@@ -41,7 +42,8 @@ async function booted(): Promise<boolean> {
   try {
     const r = await adb(["shell", "getprop sys.boot_completed"], { timeoutMs: 5000 });
     return r.stdout.toString().trim() === "1";
-  } catch {
+  } catch (e) {
+    if (e instanceof AdbUnauthorized) throw e;
     return false;
   }
 }

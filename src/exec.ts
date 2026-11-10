@@ -17,6 +17,7 @@ export const OUT_DIR = "/tmp/waydroid-mcp";
 const MAX_TEXT = 40_000;
 
 export class ToolError extends Error {}
+export class AdbUnauthorized extends ToolError {}
 
 export interface RunResult {
   code: number | null;
@@ -129,10 +130,12 @@ export function controlRequest(line: string, timeoutMs = 5000): Promise<string> 
 
 let cachedSerial: string | null = null;
 
-async function adbConnected(serial: string): Promise<boolean> {
+async function adbState(serial: string): Promise<string | null> {
   const devices = (await run("adb", ["devices"], { timeoutMs: 10_000 })).stdout.toString();
-  return new RegExp(`^${serial.replace(/\./g, "\\.")}\\s+device$`, "m").test(devices);
+  return devices.match(new RegExp(`^${serial.replace(/\./g, "\\.")}\\s+(\\S+)$`, "m"))?.[1] ?? null;
 }
+
+const adbConnected = async (serial: string) => (await adbState(serial)) === "device";
 
 /** Waydroid's adb serial, connecting adb to it when needed. */
 export async function adbSerial(): Promise<string> {
@@ -142,11 +145,19 @@ export async function adbSerial(): Promise<string> {
   if (!st.ip) throw new ToolError("Waydroid has no IP address yet, so Android is still booting. Try again in a few seconds.");
   const serial = `${st.ip}:5555`;
   for (let i = 0; i < 3; i++) {
-    if (await adbConnected(serial)) {
+    const state = await adbState(serial);
+    if (state === "device") {
       cachedSerial = serial;
       return serial;
     }
+    if (state === "unauthorized") {
+      throw new AdbUnauthorized(
+        `Android hasn't authorized this computer's adb key yet. Open Waydroid's main window (\`waydroid show-full-ui\`), ` +
+          "tick \"Always allow from this computer\" in the \"Allow USB debugging?\" prompt, and tap Allow.",
+      );
+    }
     await run("adb", ["connect", serial], { timeoutMs: 10_000 });
+    await new Promise((r) => setTimeout(r, 500));
   }
   throw new ToolError(`adb can't connect to ${serial}. Check that Android has booted (\`status\`).`);
 }
